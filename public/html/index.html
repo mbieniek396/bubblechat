@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble chat</title>
+
+    <link rel="stylesheet" href="css/assets.css">
+    <link rel="stylesheet" href="css/layout.css">
+</head>
+<body>
+    
+    <main>
+        <section>
+            <h1>Bubble Chat</h1>
+            <input placeholder="Provide a nickname" type="text" id="inputNickname">
+            <input placeholder="Provide a name of a server" type="text" id="inputServerName">
+            <article>
+                <button id="createServer">Create Server</button>
+                <button id="joinServer">Join Server</button>
+            </article>
+        </section>
+
+    </main>
+
+    <script>
+
+        let joinServer = document.getElementById("joinServer");
+        let createServer = document.getElementById("createServer");
+        let serverName = document.getElementById("inputServerName");
+        let nicknameInput = document.getElementById("inputNickname");
+
+
+        ///////////// JOIN CHAT ////////////////
+        joinServer.addEventListener('click', () => {
+            var xhr = new XMLHttpRequest();
+            var url = `http://localhost:8001/can/${serverName.value}/f`;
+            xhr.open("GET", url, true);
+            xhr.send();
+            xhr.responseType = "json";
+            xhr.onload = () => {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    console.log(xhr.response.server)
+                    if (xhr.response.error){
+                        localStorage.setItem("server", serverName.value);
+                        localStorage.setItem("nickname", nicknameInput.value);
+                        location.href = "http://localhost:8000/chat"
+                    }else{
+                        window.alert("This chat does not exist!")
+                    }
+                } else {
+                    console.log(`Error: ${xhr.status}`);
+                }
+            };
+        });
+
+
+        //////// CREATE CHAT ///////////////
+        createServer.addEventListener('click', () => {
+            // let ws = new WebSocket('ws://localhost:8000');
+            // var mes = {"server": serverName.value};
+            // ws.onopen = (event) => ws.send(JSON.stringify(mes))
+            // ws.onmessage = (message) => {
+            //     message = JSON.parse(message.data)
+            //     if (message.error){ 
+            //         console.log("error")
+            //         window.alert("this name already exists!")
+            //     }else if (message.server){
+            //         console.log("server")
+            //         localStorage.setItem("server", message.server);
+            //         location.href = "http://localhost:8000/chat"
+            //     }
+            //     console.log(message)
+            //     ws.close()
+            // }
+            var xhr = new XMLHttpRequest();
+            var url = `http://localhost:8001/can/${serverName.value}/true`;
+            xhr.open("GET", url, true);
+            xhr.send();
+            xhr.responseType = "json";
+            xhr.onload = () => {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    console.log(xhr.response.server)
+                    if (xhr.response.error){
+                        window.alert("this name already exists!")
+                    }else{
+                        localStorage.setItem("server", xhr.response.server);
+                        localStorage.setItem("nickname", nicknameInput.value);
+                        location.href = "http://localhost:8000/chat"
+                    }
+                } else {
+                    console.log(`Error: ${xhr.status}`);
+                }
+            };
+            
+        });
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Chat</title>
+
+        <link rel="stylesheet" href="css/assets.css">
+        <link rel="stylesheet" href="css/layout.css">
+         
+    </head>
+    
+
+    <body>
+        <h1 id="info"></h1>
+        <main class="chatMain">
+            <div id="chat">
+            </div>
+            <div class="inputSection">
+                <input type="text" id="inputMsg" placeholder="Input message here">
+                <label id="chooseFile" class="chooseFile" for="inputFile">📷</label>
+                <input hidden type="file" id="inputFile" multiple>
+                <button id="sendMsg">Send</button>
+            </div>
+            
+        </main>
+
+        <script>
+            let serverName = localStorage.getItem("server");
+            let nickname = localStorage.getItem("nickname");
+            let messageArea = document.getElementById("chat");
+            var typings = []
+
+            document.getElementById("info").innerHTML = `<div><p>nick:</p> <h2>${nickname}</h2></div>
+            <div>  <p>chat:</p> <h2>${serverName}</h2></div>`;
+
+            function addMessage(msg){
+                if (msg[0] === nickname){
+                    messageArea.insertAdjacentHTML("afterbegin", `
+                    <div class="yoursMessage">
+                        <p class="nick">${msg[0]}</p>
+                        
+                        <p class="msg">${msg[1]}</p>
+                        <p class="date">${msg[2]}</p>
+                    </div>`)
+                }else{
+                    messageArea.insertAdjacentHTML("afterbegin",`
+                    <div class="othersMessage">
+                        <p class="nick">${msg[0]}</p>
+                        
+                        <p class="msg">${msg[1]}</p>
+                        <p class="date">${msg[2]}</p>
+                    </div>`);
+                }
+            }
+
+            function addImageMessage(msg){
+                if (msg[0] === nickname){
+                    messageArea.insertAdjacentHTML("afterbegin",`<div class="imageMyMessage">
+                        <p class="nick">${msg[0]}</p>
+                        
+                        <img src="img/${msg[2]}">
+                        <p class="date">${msg[1]}</p>
+                    </div>`);
+                }else{
+                    messageArea.insertAdjacentHTML("afterbegin",`<div class="imageOthersMessage">
+                        <p class="nick">${msg[0]}</p>
+                        
+                        <img src="img/${msg[2]}">
+                        <p class="date">${msg[1]}</p>
+                    </div>`);
+                }
+
+            }
+
+            function joinLeaveMessage(msg){
+                messageArea.insertAdjacentHTML("afterbegin",`
+                <div class="joinLeave">
+                    <p>${msg}</p>
+                </div>`);
+            }
+
+            function printTypings(){
+                typings.forEach( (typing) => {
+                    messageArea.insertAdjacentHTML("afterbegin",`
+                    <div class="typing">
+                        <p>${typing} is typing...</p>
+                    </div>`);
+                });
+               
+            }
+
+        
+
+            // //calling the constructor which gives us the websocket object: ws
+            let ws = new WebSocket('ws://localhost:8000');
+            // //logging the websocket property properties
+            // console.log(ws);
+            // //sending a message when connection opens
+            ws.onopen = (event) => {
+                ws.send(JSON.stringify({serverAdd: serverName, nickname: nickname}));
+                joinLeaveMessage(`Dołączyłeś do chatu ${serverName}!`);
+            }
+
+            ws.onclose = (event) =>{
+                localStorage.clear()
+            }
+            // //receiving the message from server
+            // ws.onmessage = (message) => console.log(message); 
+            
+            // Display message
+            let imgs = document.getElementById("imgs");
+            
+
+            
+
+            ws.onmessage = (message) => {
+                const t = document.querySelectorAll('.typing')
+                t.forEach(typ =>{
+                    typ.remove();
+                })
+                message = JSON.parse(message.data)
+                if (message.join){
+                    joinLeaveMessage(`${message.nickname} dołączył do chatu!`);
+                }else if (message.leave){
+                    joinLeaveMessage(`${message.nickname} opuścił chat :(`);
+                }else if (message.typing){
+                    typings.push(message.typing)
+                    printTypings();
+                }else if (message.nottyping){
+                    const index = typings.indexOf(message.nottyping);
+                    if (index === 0){
+                        typings = []
+                    }else{
+                        typings = typings.splice(index, 1);
+                    }   
+                    printTypings();
+                }else{
+                    console.log(message)
+                    if (message.image){
+                        const images = message.image
+                        images.forEach( (image) =>{
+                            addImageMessage([message.nickname, message.date, image]);
+                        });
+                    
+                    }
+                    if (message.message.length > 0){
+                        addMessage([message.nickname, message.message, message.date])
+                    }
+                }
+               
+            }
+
+            //Send Msg
+            let btn = document.getElementById("sendMsg");
+            let inputField = document.getElementById("inputMsg");
+            let fileInput = document.getElementById("inputFile");
+            let chooseFile = document.getElementById("chooseFile");
+
+            function submit(){
+                const date = new Date();
+                const msg = inputField.value;
+                let month = ["sty","lut","mar","kwi","maj","czer","lip","sie","wrz","paź","lis","gru"]
+                let h = date.getHours()
+                let m = date.getMinutes()
+                if (h < 10){
+                    h = `0${h}`
+                }
+                if (m < 10){
+                    m = `0${m}`
+                }
+                let currentDate = `${date.getDate()} ${month[date.getMonth()]} o ${h}:${m}`
+                if (fileInput.files.length == 0){
+                    ws.send(JSON.stringify({server: serverName, nickname: nickname, message: inputField.value,
+                            date: currentDate}));
+                }else{
+                    const formData = new FormData();
+                    chooseFile.style.setProperty("background-color", "#6dc0ff");
+                    for (let i =0; i< fileInput.files.length; i++){
+                        formData.append("files", fileInput.files[i])
+                    }
+                    fetch("http://localhost:8000/image", {
+                        method: 'POST',
+                        body: formData,
+                    }).then(res => res.json())
+                    .then(data => {
+                        request = {server: serverName, nickname: nickname, 
+                        message: msg, image: [],
+                            date: currentDate}
+                        for (let i =0; i< fileInput.files.length; i++){
+                            request["image"].push(fileInput.files[i].name);
+                        }
+                        console.log(request);
+                        ws.send(JSON.stringify(request));
+                        fileInput.value = '';
+                    });
+                }
+                inputField.value = "";
+            }
+
+            fileInput.addEventListener('change', function(){
+                chooseFile.style.setProperty("background-color", "#8446e8");
+            })
+
+            btn.addEventListener('click', () => {
+                submit();
+            })
+
+            // Typing focuses ///
+            // inputField.addEventListener("focus", (event) => {
+            //     ws.send(JSON.stringify({nickname: nickname, typing: "s", server: serverName}));
+            // });
+
+            // inputField.addEventListener("blur", (event) => {
+            //     ws.send(JSON.stringify({nickname: nickname, Nottyping: "s", server: serverName}));
+            // });
+
+            var nottyping = true;
+
+            inputField.addEventListener('keypress', (event) =>{
+                if (event.keyCode === 13){
+                    // ws.send(JSON.stringify({nickname: nickname, Nottyping: "s", server: serverName}));
+                    submit();
+                    // ws.send(JSON.stringify({nickname: nickname, typing: "s", server: serverName}));
+                }else{
+                    if (nottyping){
+                        nottyping = false;
+                        ws.send(JSON.stringify({nickname: nickname, typing: "s", server: serverName}));
+                        setTimeout(doit   
+                        , 3000);
+                    }
+                    
+                }
+            });
+
+            function doit(){
+                ws.send(JSON.stringify({nickname: nickname, Nottyping: "s", server: serverName}));
+                nottyping = true;
+            }
+        </script>  
+    </body>
+</html>
+   
