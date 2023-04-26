@@ -1,5 +1,5 @@
 ///// IMPORTS /////
-const websocket = require('ws');
+const wessa = require('ws');
 const fs = require('fs');
 ///// Creating Server HTTP ////////////
 // const server = http.createServer((req, res) => {
@@ -66,28 +66,36 @@ var app = express();
 app.use(express.static('public'));
 
 app.get('/', (req, res) =>{
-    res.statusCode = 200;
-    fs.readFile("public/html/index.html", (err, data) =>{
-        if (err){
-            console.log(err);
-        }else{
-            res.write(data);
-        }
-        res.end();
-    });
+    // res.statusCode = 200;
+    // fs.readFile("public/html/index.html", (err, data) =>{
+    //     if (err){
+    //         console.log(err);
+    //     }else{
+    //         res.write(data);
+    //     }
+    //     res.send();
+    // });
+    res.sendFile("public/html/index.html", {root:__dirname});
 });
 
 app.get('/chat', (req, res) =>{
-    res.statusCode = 200;
-    fs.readFile("public/html/client.html", (err, data) =>{
-        if (err){
-            console.log(err);
-        }else{
-            res.write(data);
-        }
-        res.end();
-    });
+    // res.statusCode = 200;
+    // fs.readFile("public/html/client.html", (err, data) =>{
+    //     if (err){
+    //         console.log(err);
+    //     }else{
+    //         res.write(data);
+    //     }
+    //     res.send();
+    // });
+    res.sendFile("public/html/client.html", {root:__dirname});
 });
+
+app.get('/redirectMe', (req, res) =>{
+    res.redirect('/');
+});
+
+
 
 const storage = multer.diskStorage({
     destination: function(req, file, callback){
@@ -103,8 +111,17 @@ app.post('/image', uploads.array("files"), (req, res) =>{
     res.send(JSON.stringify({git:"git"}))
 });
 
-//creating websocket server
-const wss = new websocket.Server({ server: app.listen(8000) });
+
+/////////////////////////////////////////////////////////////////
+////////////////// END OF app Use with defualt /////////////////
+///////////////////////////////////////////////////////////////
+
+app.use((req, res) =>{
+    res.sendFile("public/html/404.html", {root:__dirname});
+});
+
+//creating wessa server
+const wss = new wessa.Server({ server: app.listen(8000) });
 
 ///// Rooms /////
 var rooms = {};

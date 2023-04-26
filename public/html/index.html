@@ -87,7 +87,7 @@
                     }else{
                         localStorage.setItem("server", xhr.response.server);
                         localStorage.setItem("nickname", nicknameInput.value);
-                        location.href = "http://localhost:8000/chat"
+                        location.href = "/chat"
                     }
                 } else {
                     console.log(`Error: ${xhr.status}`);
