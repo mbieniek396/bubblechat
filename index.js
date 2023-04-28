@@ -75,7 +75,7 @@ app.get('/', (req, res) =>{
     //     }
     //     res.send();
     // });
-    res.sendFile("public/html/index.html", {root:__dirname});
+    res.status(200).sendFile("public/html/index.html", {root:__dirname});
 });
 
 app.get('/chat', (req, res) =>{
@@ -108,7 +108,7 @@ const storage = multer.diskStorage({
 const uploads = multer({storage: storage});
 
 app.post('/image', uploads.array("files"), (req, res) =>{
-    res.send(JSON.stringify({git:"git"}))
+    res.status(200).send(JSON.stringify({git:"git"}))
 });
 
 
@@ -117,7 +117,7 @@ app.post('/image', uploads.array("files"), (req, res) =>{
 ///////////////////////////////////////////////////////////////
 
 app.use((req, res) =>{
-    res.sendFile("public/html/404.html", {root:__dirname});
+    res.status(404).sendFile("public/html/404.html", {root:__dirname});
 });
 
 //creating wessa server
