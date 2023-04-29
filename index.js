@@ -62,8 +62,13 @@ app2.get('/can/:name/:create', (req, resp) =>{
     resp.send()
 });
 
+/// App
 var app = express();
+app.set('view engine', 'ejs');
+
+/// middleware
 app.use(express.static('public'));
+app.use(express.urlencoded( {extended: true})); // TO read encoded body like post request body
 
 app.get('/', (req, res) =>{
     // res.statusCode = 200;
@@ -76,6 +81,10 @@ app.get('/', (req, res) =>{
     //     res.send();
     // });
     res.status(200).sendFile("public/html/index.html", {root:__dirname});
+});
+
+app.get('/welcome', (req, res) =>{
+    res.render('welcome', {nickname: "mati", code: "<h2>Tutaj h2</h2>", title: "Welcome"});
 });
 
 app.get('/chat', (req, res) =>{
